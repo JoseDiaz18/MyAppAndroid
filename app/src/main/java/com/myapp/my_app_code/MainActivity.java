@@ -20,7 +20,6 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
-    private ApiService apiService;
     private UserViewModel userViewModel;
 
     @Override
@@ -29,23 +28,14 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Initializer Retrofit
-        apiService = RetrofitClient.getClient().create(ApiService.class);
-
-        obtenerUsers();
-
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        userViewModel.sincronizarUsuariosDesdeAPI();
 
-        // Insertar User
-        User User = new User("Juan Pérez", "juan@example.com");
-        userViewModel.insertarUser(User);
-
-        // Obtener Users
-        List<User> listaUsers = userViewModel.obtenerUsers();
-        for (User u : listaUsers) {
-            Log.d("ROOM", "ID: " + u.getId() + ", Nombre: " + u.getName());
-        }
-        
+        userViewModel.obtenerUsuarios().observe(this, usuarios -> {
+            for (User u : usuarios) {
+                Log.d("ROOM", "ID: " + u.getId() + ", Nombre: " + u.getName());
+            }
+        });
         
         
        /* ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -54,54 +44,6 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });*/
 
-    }
-
-    private void obtenerUsers() {
-        Call<List<User>> call = apiService.obtenerUsers();
-
-        call.enqueue(new Callback<List<User>>() {
-            @Override
-            public void onResponse(@NonNull Call<List<User>> call, @NonNull Response<List<User>> response) {
-                if (response.isSuccessful()) {
-                    List<User> users = response.body();
-                    assert users != null;
-                    for (User user : users) {
-                        Log.d("API", "ID: " + user.getId() + ", Nombre: " + user.getName());
-                    }
-                } else {
-                    Log.e("API", "Error en la respuesta: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<List<User>> call, @NonNull Throwable t) {
-                Log.e("API", "Fallo en la petición: " + t.getMessage());
-            }
-        });
-    }
-
-    private void crearUser() {
-        User nuevoUser = new User("", "");
-        nuevoUser.setName("Ana López");
-        nuevoUser.setEmail("ana@example.com");
-
-        Call<User> call = apiService.crearUser(nuevoUser);
-        call.enqueue(new Callback<User>() {
-            @Override
-            public void onResponse(@NonNull Call<User> call, @NonNull Response<User> response) {
-                if (response.isSuccessful()) {
-                    assert response.body() != null;
-                    Log.d("API", "User creado con ID: " + response.body().getId());
-                } else {
-                    Log.e("API", "Error al crear user: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<User> call, @NonNull Throwable t) {
-                Log.e("API", "Error: " + t.getMessage());
-            }
-        });
     }
 
 }
